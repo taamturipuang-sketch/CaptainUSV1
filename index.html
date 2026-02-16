@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Captain America Edition: First Avenger v1.6</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&family=Oswald:wght@700&display=swap');
+
+        :root {
+            --cap-blue: #003366; --cap-red: #cc0000; --cap-silver: #c0c0c0;
+            --cap-star: #ffffff; --glass-bg: rgba(0, 51, 102, 0.8);
+        }
+
+        body {
+            background: radial-gradient(circle at center, #004488, #001122);
+            color: white; font-family: 'Kanit', sans-serif;
+            margin: 0; padding: 10px; overflow-x: hidden;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        .header {
+            text-align: center; border-bottom: 3px solid var(--cap-red);
+            padding-bottom: 5px; margin-bottom: 10px; width: 100%; max-width: 450px;
+        }
+        .header h1 { 
+            font-family: 'Oswald', sans-serif; margin: 0; color: var(--cap-star);
+            text-shadow: 2px 2px 10px rgba(255,255,255,0.5); font-size: 1.5rem;
+        }
+
+        .road-container {
+            width: 100%; max-width: 450px; height: 110px; background: rgba(255,255,255,0.9);
+            border: 3px solid var(--cap-silver); border-radius: 5px; display: flex; 
+            overflow-x: auto; margin-bottom: 10px;
+        }
+        .road-column { display: flex; flex-direction: column; min-width: 18px; border-right: 1px solid #ccc; }
+        .road-cell { width: 18px; height: 18px; border-bottom: 1px solid #ccc; display: flex; align-items: center; justify-content: center; }
+        .dot { width: 15px; height: 15px; border-radius: 50%; font-size: 9px; font-weight: bold; color: white; display: flex; align-items: center; justify-content: center; }
+
+        .counter-bar {
+            width: 100%; max-width: 450px; display: flex; justify-content: space-around;
+            background: var(--glass-bg); padding: 5px; border-radius: 5px; border: 1px solid var(--cap-silver);
+            margin-bottom: 10px; font-weight: bold; font-size: 0.9rem;
+        }
+
+        .main-section {
+            width: 100%; max-width: 450px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;
+        }
+        .panel { 
+            background: var(--glass-bg); border: 2px solid var(--cap-silver); border-radius: 10px; padding: 10px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 150px;
+        }
+        .pred-title { font-size: 0.75rem; color: var(--cap-silver); margin-bottom: 5px; text-transform: uppercase; }
+        .pred-val { font-size: 5rem; font-family: 'Oswald', sans-serif; font-weight: bold; line-height: 1; }
+
+        .money-table { width: 100%; font-size: 0.75rem; border-collapse: collapse; }
+        .money-table td { padding: 3px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .money-table input { width: 50px; background: #fff; border: none; border-radius: 3px; text-align: center; font-weight: bold; }
+        .m-active { background: var(--cap-red); color: white; font-weight: bold; border-radius: 3px; }
+
+        .btn-row {
+            width: 100%; max-width: 450px; display: grid; grid-template-columns: 2fr 2fr 1.5fr 1.5fr; gap: 5px; margin-bottom: 10px;
+        }
+        .btn {
+            padding: 12px 0; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; color: white;
+            font-family: 'Oswald', sans-serif; font-size: 1rem; text-transform: uppercase;
+        }
+        .btn-p { background: #0066ff; box-shadow: 0 4px #0044cc; }
+        .btn-b { background: #cc0000; box-shadow: 0 4px #990000; }
+        .btn-action { background: #555; box-shadow: 0 4px #333; font-size: 0.8rem; }
+        .btn:active { transform: translateY(2px); box-shadow: none; }
+
+        /* จุดที่แก้ไข 2: ปรับความสูงเพื่อให้เห็น 10 บรรทัด (Header 1 + Data 9) */
+        .history-section {
+            width: 100%; max-width: 450px; background: rgba(0,0,0,0.4); border-radius: 5px;
+            border: 1px solid var(--cap-silver); height: 260px; overflow-y: auto;
+            scrollbar-width: none; -ms-overflow-style: none;
+        }
+        .history-section::-webkit-scrollbar { display: none; }
+        .hist-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+        .hist-table th { background: rgba(255,255,255,0.2); padding: 5px; color: var(--cap-silver); position: sticky; top: 0; z-index: 10; }
+        .hist-table td { padding: 4px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .win-text { color: #00ff00; font-weight: bold; }
+        .loss-text { color: #888888; font-weight: bold; }
+
+        .ai-status { font-size: 0.7rem; color: #00ddff; margin-top: 5px; text-align: center; letter-spacing: 1px; }
+        #shieldCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10000; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Captain America Edition: First Avenger v1.6</h1>
+    </div>
+
+    <div class="road-container" id="bigRoad"></div>
+
+    <div class="counter-bar">
+        <span>PLAYER: <span id="pCount">0</span></span>
+        <span>BANKER: <span id="bCount">0</span></span>
+        <span>TOTAL: <span id="tCount">0</span></span>
+    </div>
+
+    <div class="main-section">
+        <div class="panel">
+            <span class="pred-title" id="aiStatus">SCANNING...</span>
+            <div class="pred-val" id="predTxt">-</div>
+            <div class="ai-status" id="confTxt">STARK_SYSTEM: IDLE</div>
+        </div>
+        <div class="panel">
+            <table class="money-table">
+                <tr id="m1r"><td>M1</td><td><input type="number" id="m1v" value="5" oninput="updateMoney()"></td></tr>
+                <tr id="m2r"><td>M2</td><td id="m2v">10</td></tr>
+                <tr id="m3r"><td>M3</td><td id="m3v">25</td></tr>
+                <tr id="m4r"><td>M4</td><td id="m4v">50</td></tr>
+                <tr id="m5r"><td>M5</td><td id="m5v">100</td></tr>
+                <tr id="m6r"><td>M6</td><td id="m6v">210</td></tr>
+            </table>
+        </div>
+    </div>
+
+    <div class="btn-row">
+        <button class="btn btn-p" onclick="record('P')">PLAYER</button>
+        <button class="btn btn-b" onclick="record('B')">BANKER</button>
+        <button class="btn btn-action" onclick="undo()">UNDO</button>
+        <button class="btn btn-action" onclick="reset()">RESET</button>
+    </div>
+
+    <div class="history-section">
+        <table class="hist-table">
+            <thead>
+                <tr><th>ROUND</th><th>REAL</th><th>PREDICT</th><th>RESULT</th></tr>
+            </thead>
+            <tbody id="histBody"></tbody>
+        </table>
+    </div>
+
+    <canvas id="shieldCanvas"></canvas>
+
+<script>
+    let history = [];
+    let step = 1;
+
+    const winSound = new Audio('https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3'); 
+    winSound.load();
+
+    function triggerShield() {
+        winSound.currentTime = 0;
+        winSound.play().catch(e => console.log("Audio Error:", e));
+        
+        const canvas = document.getElementById('shieldCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        let particles = [];
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        
+        class Part {
+            constructor(color, dist, angle, size) {
+                this.color = color; this.dist = dist; this.angle = angle;
+                this.size = size; this.curr = 0; this.op = 1;
+            }
+            // จุดที่แก้ไข 1: ลดค่าความเร็วในการจางลง (จาก 0.02 เป็น 0.006) เพื่อให้อยู่ได้นานขึ้น ~3 วินาที
+            update() { this.curr += (this.dist - this.curr) * 0.1; if(this.curr > this.dist * 0.7) this.op -= 0.006; }
+            draw() {
+                ctx.globalAlpha = this.op; ctx.fillStyle = this.color;
+                ctx.beginPath(); ctx.arc(centerX + Math.cos(this.angle) * this.curr, centerY + Math.sin(this.angle) * this.curr, this.size, 0, 7);
+                ctx.fill();
+            }
+        }
+        for (let i = 0; i < 360; i += 6) {
+            let a = i * Math.PI / 180;
+            particles.push(new Part('#cc0000', 140, a, 4));
+            particles.push(new Part('#ffffff', 110, a, 3));
+            particles.push(new Part('#cc0000', 80, a, 3));
+            particles.push(new Part('#003366', 50, a, 2));
+        }
+        function anim() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles = particles.filter(p => p.op > 0);
+            particles.forEach(p => { p.update(); p.draw(); });
+            if(particles.length > 0) requestAnimationFrame(anim);
+        }
+        anim();
+    }
+
+    function getAIPrediction(data) {
+        if (data.length < 25) return { val: 'WAIT', conf: 0, status: `DNA SCANNING (${data.length}/25)` };
+        
+        const last1 = data[data.length-1], last2 = data[data.length-2], last3 = data[data.length-3];
+
+        // LOGIC: DRAGON FOLLOW
+        if (last1 === last2 && last2 === last3) {
+            return { val: last1, conf: 98, status: "PATTERN: DRAGON FOUND" };
+        }
+
+        // LOGIC: PING-PONG FOLLOW
+        if (last1 !== last2 && last2 !== last3) {
+            return { val: (last1 === 'P' ? 'B' : 'P'), conf: 95, status: "PATTERN: PING-PONG" };
+        }
+
+        // LOGIC: RECOVERY (Loss 2 times)
+        const recentResults = history.slice(-2);
+        if (recentResults.length === 2 && recentResults.every(h => h.isWin === false)) {
+            return { val: last1, conf: 85, status: "RECOVERY: FOLLOW TREND" };
+        }
+
+        let binaryCode = data.slice(-25).map(v => v === 'P' ? 0 : 1);
+        let hash = binaryCode.reduce((acc, val, idx) => acc + (val * Math.pow(2, idx % 7)), 0);
+        let decision = (hash % 2 === 0) ? 'P' : 'B';
+
+        return { val: decision, conf: 70 + (hash % 25), status: "STARK_ANALYZING..." };
+    }
+
+    function record(val) {
+        if (history.length >= 75) { alert("MISSION COMPLETE"); return; }
+        const raw = history.map(h => h.real);
+        const ai = getAIPrediction(raw);
+        let win = false;
+        if (ai.val !== 'WAIT') {
+            win = (val === ai.val);
+            if (win) { 
+                step = 1; 
+                triggerShield();
+            } else { 
+                step = step >= 6 ? 1 : step + 1; 
+            }
+        }
+        history.push({ real: val, pred: ai.val, isWin: win, stepAt: step, round: history.length + 1 });
+        updateUI();
+    }
+
+    function updateMoney() {
+        let m1 = parseInt(document.getElementById('m1v').value) || 0;
+        document.getElementById('m2v').innerText = m1 * 2;
+        document.getElementById('m3v').innerText = m1 * 5;
+        document.getElementById('m4v').innerText = m1 * 10;
+        document.getElementById('m5v').innerText = m1 * 20;
+        document.getElementById('m6v').innerText = m1 * 42;
+    }
+
+    function updateUI() {
+        document.getElementById('pCount').innerText = history.filter(h => h.real === 'P').length;
+        document.getElementById('bCount').innerText = history.filter(h => h.real === 'B').length;
+        document.getElementById('tCount').innerText = history.length;
+
+        const road = document.getElementById('bigRoad'); road.innerHTML = '';
+        let cols = [[]], lastR = '';
+        history.forEach(h => {
+            if (lastR === '' || (h.real === lastR && cols[cols.length-1].length < 6)) {
+                cols[cols.length-1].push(h.real);
+            } else { cols.push([h.real]); }
+            lastR = h.real;
+        });
+        cols.forEach(c => {
+            let div = document.createElement('div'); div.className = 'road-column';
+            for(let i=0; i<6; i++) {
+                let cell = document.createElement('div'); cell.className = 'road-cell';
+                if(c[i]) {
+                    let d = document.createElement('div'); d.className = 'dot';
+                    d.style.background = c[i] === 'P' ? '#0066ff' : '#cc0000';
+                    d.innerText = c[i]; cell.appendChild(d);
+                }
+                div.appendChild(cell);
+            }
+            road.appendChild(div);
+        });
+        road.scrollLeft = road.scrollWidth;
+
+        const nextAI = getAIPrediction(history.map(h => h.real));
+        const predTxt = document.getElementById('predTxt');
+        const aiStat = document.getElementById('aiStatus');
+        const confTxt = document.getElementById('confTxt');
+
+        if (history.length < 25) {
+            aiStat.innerText = nextAI.status;
+            predTxt.innerText = '...'; predTxt.style.color = 'white';
+            confTxt.innerText = "STARK_AI: SCANNING DNA";
+        } else {
+            aiStat.innerText = "NEXT ATTACK";
+            predTxt.innerText = nextAI.val;
+            predTxt.style.color = nextAI.val === 'P' ? '#00bbff' : '#ff4444';
+            confTxt.innerText = nextAI.status + " (" + nextAI.conf + "%)";
+        }
+
+        for(let i=1; i<=6; i++) {
+            document.getElementById(`m${i}r`).className = (step === i && history.length >= 25) ? 'm-active' : '';
+        }
+
+        const histBody = document.getElementById('histBody');
+        histBody.innerHTML = '';
+        history.slice().reverse().forEach(h => {
+            let resTxt = h.pred === 'WAIT' ? '-' : (h.isWin ? 'WIN' : 'LOSS');
+            histBody.innerHTML += `
+                <tr>
+                    <td>${h.round}</td>
+                    <td style="color:${h.real==='P'?'#0088ff':'#ff4444'}">${h.real}</td>
+                    <td style="color:${h.pred==='P'?'#0088ff':'#ff4444'}">${h.pred}</td>
+                    <td class="${h.isWin?'win-text':'loss-text'}">${resTxt}</td>
+                </tr>
+            `;
+        });
+    }
+
+    function undo() { history.pop(); if(step > 1) step--; updateUI(); }
+    function reset() { if(confirm("ABORT ALL DATA?")) { history = []; step = 1; updateUI(); } }
+    updateUI();
+    updateMoney();
+</script>
+</body>
+</html>
